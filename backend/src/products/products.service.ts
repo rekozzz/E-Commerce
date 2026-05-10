@@ -47,11 +47,12 @@ export class ProductsService {
         })
       );
       
-      // Parse decimal price values from the returned results and fix image mapping
+      // Parse decimal price values from the returned results and fix mappings
       return response.data.results.map((p: any) => ({
         ...p,
         price: Number(p.price),
-        imageUrl: p.image_url
+        imageUrl: p.image_url,
+        stockQuantity: p.stock_quantity
       }));
     } catch (error) {
       console.error('AI Search Error:', error?.message);

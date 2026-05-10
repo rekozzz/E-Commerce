@@ -113,7 +113,7 @@ def semantic_search(req: SearchRequest):
         # Raw SQL query using Cosine Distance operator (<=>)
         # We also calculate a similarity score (1 - cosine_distance)
         search_query = """
-            SELECT id, name, description, price, category, image_url, 
+            SELECT id, name, description, price, category, image_url, stock_quantity,
                    1 - (embedding <=> %s) AS similarity
             FROM products
             WHERE embedding IS NOT NULL
