@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+/* Prevent white flash — dark base for the whole app */
+html,
+body,
+#root {
+  background-color: #0f172a; /* slate-900 */
+  min-height: 100%;
+  scroll-behavior: smooth;
+}
