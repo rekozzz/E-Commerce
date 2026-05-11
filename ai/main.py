@@ -8,7 +8,8 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import uvicorn
 from dotenv import load_dotenv
-import os
+import boto3
+import json
 
 # Point to the actual location of the .env file in your backend folder
 load_dotenv("../backend/.env")  
@@ -24,11 +25,26 @@ DB_PORT = os.getenv("DB_PORT", "5432")
 # Initialize FastAPI
 app = FastAPI(title="nexShop AI Brain")
 
-# Initialize Sentence Transformer model
-# all-MiniLM-L6-v2 produces 384-dimensional vectors
-print("Loading model (all-MiniLM-L6-v2)...")
-model = SentenceTransformer('all-MiniLM-L6-v2')
-print("Model loaded successfully.")
+# Initialize SageMaker Client
+print("Initializing SageMaker client...")
+sagemaker_client = boto3.client('sagemaker-runtime', region_name=os.getenv('AWS_REGION', 'us-east-1'))
+SAGEMAKER_ENDPOINT_NAME = os.getenv('SAGEMAKER_ENDPOINT_NAME', 'all-minilm-l6-v2-endpoint')
+print(f"Configured to use SageMaker endpoint: {SAGEMAKER_ENDPOINT_NAME}")
+
+def get_embeddings_from_sagemaker(texts):
+    if isinstance(texts, str):
+        texts = [texts]
+    
+    # Format required by HuggingFace Inference DLC
+    payload = {"inputs": texts}
+    
+    response = sagemaker_client.invoke_endpoint(
+        EndpointName=SAGEMAKER_ENDPOINT_NAME,
+        ContentType='application/json',
+        Body=json.dumps(payload)
+    )
+    result = json.loads(response['Body'].read().decode())
+    return result
 
 def get_db_connection():
     conn = psycopg2.connect(
@@ -69,9 +85,9 @@ def sync_embeddings():
         # Handle potential NULL descriptions safely
         df['text_to_embed'] = df['name'] + ". " + df['description'].fillna("")
         
-        # Generate 384-dimensional embeddings using sentence-transformers
-        # The encode method returns a list of numpy arrays
-        embeddings = model.encode(df['text_to_embed'].tolist())
+        # Generate 384-dimensional embeddings using SageMaker endpoint
+        # The encode method returns a list of numpy arrays or lists
+        embeddings = get_embeddings_from_sagemaker(df['text_to_embed'].tolist())
         
         # Update the database
         update_query = "UPDATE products SET embedding = %s WHERE id = %s"
@@ -104,8 +120,8 @@ def semantic_search(req: SearchRequest):
         raise HTTPException(status_code=400, detail="Query string is required")
         
     try:
-        # Generate embedding for the search query
-        query_vector = model.encode(req.query)
+        # Generate embedding for the search query using SageMaker
+        query_vector = get_embeddings_from_sagemaker(req.query)[0]
         
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)

@@ -5,12 +5,14 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Enable CORS for React frontend
+  // Set global prefix to match previous Nginx setup
+  app.setGlobalPrefix('api');
+
+  // Enable CORS for React frontend (S3 or local)
   app.enableCors({
-    origin: 'http://localhost:5173',
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
   });
 
   // Global validation pipe

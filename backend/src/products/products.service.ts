@@ -15,7 +15,7 @@ export class ProductsService {
   ) {}
 
   async findAll(search?: string, category?: string) {
-    const conditions: import("drizzle-orm").SQL[] = [];
+    const conditions: import("drizzle-orm").SQL<unknown>[] = [];
     if (search) {
       const searchOr = or(
         ilike(schema.productsTable.name, `%${search}%`),
@@ -41,7 +41,7 @@ export class ProductsService {
     try {
       // Forward to the Python AI Brain
       const response = await firstValueFrom(
-        this.httpService.post('http://localhost:8000/search', {
+        this.httpService.post(`${process.env.AI_SERVICE_URL || 'http://localhost:8000'}/search`, {
           query,
           top_k: 3
         })
