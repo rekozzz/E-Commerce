@@ -1,5 +1,5 @@
 # Set your AWS details here!
-$AWS_ACCOUNT_ID="REPLACE_WITH_YOUR_ACCOUNT_ID"
+$AWS_ACCOUNT_ID="657588917420"
 $AWS_REGION="us-east-1"  # Change if your region is different
 $REPO_NAME="nexshop-backend"
 
