@@ -8,6 +8,13 @@
       "when": 1775351861445,
       "tag": "0000_vengeful_fenris",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1778560668474,
+      "tag": "0001_glorious_shatterstar",
+      "breakpoints": true
     }
   ]
 }

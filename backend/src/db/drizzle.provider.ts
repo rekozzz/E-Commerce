@@ -22,6 +22,7 @@ export const DrizzleProvider: Provider = {
       user,
       password,
       database,
+      ssl: host !== 'localhost' && host !== '127.0.0.1' ? { rejectUnauthorized: false } : false,
     });
 
     return drizzle(pool, { schema });
