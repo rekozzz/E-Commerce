@@ -43,7 +43,19 @@ def get_embeddings_from_sagemaker(texts):
         Body=json.dumps(payload)
     )
     result = json.loads(response['Body'].read().decode())
-    return result
+    
+    # Extract the [CLS] token (the 1st token) to get a 1-D sentence embedding
+    # We cannot use np.array(result) because sentences of different lengths produce inhomogeneous lists.
+    embeddings = []
+    for sent_out in result:
+        if isinstance(sent_out[0], list) and isinstance(sent_out[0][0], list):
+            embeddings.append(sent_out[0][0])
+        elif isinstance(sent_out[0], list):
+            embeddings.append(sent_out[0])
+        else:
+            embeddings.append(sent_out)
+            
+    return embeddings
 
 def get_db_connection():
     conn = psycopg2.connect(
@@ -125,6 +137,9 @@ def semantic_search(req: SearchRequest):
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
         
+        # Format the python list as a string so PostgreSQL parses it as a vector
+        vector_str = "[" + ",".join(map(str, query_vector)) + "]"
+        
         # Raw SQL query using Cosine Distance operator (<=>)
         # We also calculate a similarity score (1 - cosine_distance)
         search_query = """
@@ -136,8 +151,8 @@ def semantic_search(req: SearchRequest):
             LIMIT %s;
         """
         
-        # query_vector is passed twice (once for the similarity score, once for the ORDER BY)
-        cur.execute(search_query, (query_vector, query_vector, req.top_k))
+        # Pass the formatted string
+        cur.execute(search_query, (vector_str, vector_str, req.top_k))
         results = cur.fetchall()
         
         return {"query": req.query, "results": results}

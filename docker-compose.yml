@@ -7,7 +7,7 @@ services:
     container_name: nexshop-backend
     restart: always
     ports:
-      - "80:3000"
+      - "3000:3000"
     environment:
       # These will be read from the .env file in the directory where you run docker-compose
       - DB_HOST=${DB_HOST}
@@ -18,7 +18,24 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - ADMIN_EMAIL=${ADMIN_EMAIL}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
-      - AI_SERVICE_URL=${AI_SERVICE_URL}
+      - AI_SERVICE_URL=http://ai:8000
+    networks:
+      - nexshop-network
+
+  ai:
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/nexshop-ai:latest
+    container_name: nexshop-ai
+    restart: always
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME:-nexshop}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - SAGEMAKER_ENDPOINT_NAME=all-minilm-l6-v2-endpoint
+    # We must explicitly pass AWS credentials or assign an IAM role to the EC2 instance
+    # so the container can authenticate with SageMaker.
     networks:
       - nexshop-network
 
